@@ -67,7 +67,7 @@
 
   "web_accessible_resources": [
     {
-      "resources": ["onboarding/index.html"],
+      "resources": ["src/onboarding/index.html"],
       "matches":   ["<all_urls>"]
     }
   ]
