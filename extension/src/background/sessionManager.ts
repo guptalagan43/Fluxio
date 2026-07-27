@@ -1,10 +1,11 @@
 // src/background/sessionManager.ts
-// Manages session state, turns, daily rollups, and session cleanup.
+// Manages session state, turns, daily rollups, weekly budget accumulation,
+// badge updates, and session cleanup.
 
 import type { NewMessagePayload, Session, Turn } from '../utils/types';
 import { MAX_TURNS_PER_SESSION, SESSION_IDLE_TIMEOUT_MS, TURNS_TO_AGGREGATE } from '../utils/constants';
-import { getSession, setSession, removeSession, saveCompletedSession, getDayRollup, setDayRollup } from '../utils/storage';
-import { getTodayKey } from '../utils/time';
+import { getSession, setSession, removeSession, saveCompletedSession, getDayRollup, setDayRollup, getBudget, setBudget } from '../utils/storage';
+import { getTodayKey, isNewWeek, getWeekStart } from '../utils/time';
 import { estimateTokens } from './tokenizer';
 import { fetchAndCacheCostConfig, calculateCost } from './costConfigFetcher';
 
@@ -71,9 +72,32 @@ export async function handleNewMessage(payload: NewMessagePayload, tabId: number
 
   await setSession(tabId, session);
   await updateDailyRollup(payload.platform, tokens, costUSD);
+  await updateWeeklyBudget(costUSD);
+  await updateBadge();
 
   return session;
 }
+
+// ── Weekly Budget Accumulation ────────────────────────────────────────
+// Called on every handleNewMessage to track weekly spending.
+
+export async function updateWeeklyBudget(costUSD: number): Promise<void> {
+  const budget = await getBudget();
+
+  // Reset budget if a new week has started
+  if (isNewWeek(budget.weekStartDate)) {
+    budget.currentWeekUSD = 0;
+    budget.weekStartDate = getWeekStart().toISOString().slice(0, 10);
+    budget.notified50 = false;
+    budget.notified80 = false;
+    budget.notified100 = false;
+  }
+
+  budget.currentWeekUSD += costUSD;
+  await setBudget(budget);
+}
+
+// ── Daily Rollup ──────────────────────────────────────────────────────
 
 export async function updateDailyRollup(platform: string, tokens: number, costUSD: number): Promise<void> {
   const dateKey = getTodayKey();
@@ -92,6 +116,29 @@ export async function updateDailyRollup(platform: string, tokens: number, costUS
 
   await setDayRollup(dateKey, rollup);
 }
+
+// ── Extension Badge ───────────────────────────────────────────────────
+// Updates the icon badge text with today's token count (e.g. "14k").
+
+async function updateBadge(): Promise<void> {
+  const dateKey = getTodayKey();
+  const rollup = await getDayRollup(dateKey);
+  const badgeText = formatBadge(rollup.totalTokens);
+
+  await chrome.action.setBadgeText({ text: badgeText });
+  // Using the accent color from design.md
+  await chrome.action.setBadgeBackgroundColor({ color: '#5c4a3a' });
+}
+
+function formatBadge(tokens: number): string {
+  if (tokens === 0) return '';
+  if (tokens < 1000) return String(tokens);
+  if (tokens < 10000) return `${(tokens / 1000).toFixed(1)}k`;
+  if (tokens < 1000000) return `${Math.round(tokens / 1000)}k`;
+  return `${(tokens / 1000000).toFixed(1)}M`;
+}
+
+// ── Session Cleanup ───────────────────────────────────────────────────
 
 export async function cleanupInactiveSessions(): Promise<void> {
   const allStorage = await chrome.storage.local.get(null);
