@@ -78,6 +78,7 @@ const DEFAULT_PREFS: Prefs = {
     code: 'claude-sonnet',
     longContext: 'gemini-1.5-pro',
     creative: 'claude-sonnet',
+    research: 'gpt-4o',
   },
   disabledPlatforms: [],
 };

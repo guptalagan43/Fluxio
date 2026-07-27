@@ -70,6 +70,14 @@ export async function handleNewMessage(payload: NewMessagePayload, tabId: number
     }
   }
 
+  // Context-length warnings — set once per session
+  if (!session.warned6k && session.totalTokens > 6000) {
+    session.warned6k = true;
+  }
+  if (!session.warned15k && session.totalTokens > 15000) {
+    session.warned15k = true;
+  }
+
   await setSession(tabId, session);
   await updateDailyRollup(payload.platform, tokens, costUSD);
   await updateWeeklyBudget(costUSD);

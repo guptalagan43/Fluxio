@@ -15,6 +15,8 @@ import {
 } from '../utils/constants';
 import { handleNewMessage, getActiveSession, cleanupInactiveSessions, registerTabListeners } from './sessionManager';
 import { fetchAndCacheCostConfig } from './costConfigFetcher';
+import { checkThresholds } from './budgetManager';
+import { getSession, setSession } from '../utils/storage';
 
 // Register tab removal listeners
 registerTabListeners();
@@ -51,11 +53,32 @@ chrome.runtime.onMessage.addListener(
       }
 
       case 'DISMISS_SUGGESTION': {
+        const tabId = message.tabId || sender.tab?.id || 0;
+        getSession(tabId).then(async (session) => {
+          if (session) {
+            session.lastSuggestion = null;
+            await setSession(tabId, session);
+          }
+          sendResponse({ received: true });
+        });
+        return true;
+      }
+
+      case 'DISMISS_WARNING': {
+        // Dismiss is handled in popup local state — no storage write needed
+        // This message type is reserved for future use if needed
         sendResponse({ received: true });
         break;
       }
 
-      case 'DISMISS_WARNING': {
+      case 'SAVE_PREFS': {
+        // Will be used by SettingsPanel to persist prefs changes
+        sendResponse({ received: true });
+        break;
+      }
+
+      case 'SAVE_BUDGET': {
+        // Will be used by SettingsPanel to persist budget changes
         sendResponse({ received: true });
         break;
       }
@@ -73,7 +96,7 @@ chrome.runtime.onMessage.addListener(
 chrome.alarms.onAlarm.addListener((alarm) => {
   switch (alarm.name) {
     case ALARM_BUDGET_CHECK:
-      // Implemented in Phase 4
+      checkThresholds();
       break;
 
     case ALARM_SYNC:

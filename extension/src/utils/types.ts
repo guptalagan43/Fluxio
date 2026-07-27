@@ -49,6 +49,7 @@ export interface Prefs {
     code: string;
     longContext: string;
     creative: string;
+    research: string;
   };
   disabledPlatforms: string[];
 }
@@ -103,5 +104,7 @@ export type ExtensionMessage =
   | { type: 'GET_SESSION'; tabId: number }
   | { type: 'GET_SUMMARY' }
   | { type: 'AUTH_SUCCESS'; token: string }
-  | { type: 'DISMISS_SUGGESTION'; sessionId: string }
-  | { type: 'DISMISS_WARNING'; sessionId: string };
+  | { type: 'DISMISS_SUGGESTION'; sessionId: string; tabId?: number }
+  | { type: 'DISMISS_WARNING'; sessionId: string; tabId?: number }
+  | { type: 'SAVE_PREFS'; prefs: Prefs }
+  | { type: 'SAVE_BUDGET'; budget: Budget };
