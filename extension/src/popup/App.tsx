@@ -1,18 +1,36 @@
 // src/popup/App.tsx
-// Root popup component. Placeholder for Phase 1 — components added in later phases.
+// Root popup component — Phase 2 MVP rendering Header and SessionPanel.
+
+import { Header } from './components/Header';
+import { SessionPanel } from './components/SessionPanel';
+import { useActiveSession } from './hooks/useActiveSession';
 
 function App(): JSX.Element {
+  const { session, loading } = useActiveSession();
+
+  if (loading) {
+    return (
+      <div className="popup-container">
+        <Header />
+        <div className="popup-body">
+          <p className="popup-placeholder">Loading session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const platformNames: Record<string, string> = {
+    chatgpt: 'ChatGPT',
+    claude: 'Claude',
+    gemini: 'Gemini',
+  };
+
+  const displayName = session ? (platformNames[session.platform] || session.platform) : 'AI Token Tracker';
+
   return (
     <div className="popup-container">
-      <div className="popup-header">
-        <span className="popup-title">AI Token Tracker</span>
-        <span className="popup-subtitle">Ready</span>
-      </div>
-      <div className="popup-body">
-        <p className="popup-placeholder">
-          Extension loaded. Visit a supported AI platform to begin tracking.
-        </p>
-      </div>
+      <Header platformName={displayName} modelName={session?.model} />
+      <SessionPanel session={session} />
     </div>
   );
 }
