@@ -4,10 +4,11 @@
 
 import type { NewMessagePayload, Session, Turn } from '../utils/types';
 import { MAX_TURNS_PER_SESSION, SESSION_IDLE_TIMEOUT_MS, TURNS_TO_AGGREGATE } from '../utils/constants';
-import { getSession, setSession, removeSession, saveCompletedSession, getDayRollup, setDayRollup, getBudget, setBudget } from '../utils/storage';
+import { getSession, setSession, removeSession, saveCompletedSession, getDayRollup, setDayRollup, getBudget, setBudget, getPrefs } from '../utils/storage';
 import { getTodayKey, isNewWeek, getWeekStart } from '../utils/time';
 import { estimateTokens } from './tokenizer';
 import { fetchAndCacheCostConfig, calculateCost } from './costConfigFetcher';
+import { classifyTask } from './suggestionEngine';
 
 export async function getActiveSession(tabId: number): Promise<Session | null> {
   return await getSession(tabId);
@@ -76,6 +77,20 @@ export async function handleNewMessage(payload: NewMessagePayload, tabId: number
   }
   if (!session.warned15k && session.totalTokens > 15000) {
     session.warned15k = true;
+  }
+
+  // Model suggestion engine — run after user messages
+  if (payload.role === 'user') {
+    const budget = await getBudget();
+    const prefs = await getPrefs();
+    const remaining = Math.max(0, budget.weeklyLimitUSD - budget.currentWeekUSD);
+    session.lastSuggestion = classifyTask(
+      payload.text,
+      session.totalTokens,
+      remaining,
+      budget.weeklyLimitUSD,
+      prefs.preferredModels
+    );
   }
 
   await setSession(tabId, session);

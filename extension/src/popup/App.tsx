@@ -7,6 +7,7 @@ import { SessionPanel } from './components/SessionPanel';
 import { TodaySummary } from './components/TodaySummary';
 import { BudgetBar } from './components/BudgetBar';
 import { ContextWarning } from './components/ContextWarning';
+import { SuggestionChip } from './components/SuggestionChip';
 import { SettingsPanel } from './components/SettingsPanel';
 import { SignInPrompt } from './components/SignInPrompt';
 import { useActiveSession } from './hooks/useActiveSession';
@@ -51,6 +52,7 @@ function App(): JSX.Element {
   const [showSettings, setShowSettings] = useState(false);
   const [showSignInPrompt, setShowSignInPrompt] = useState(false);
   const [warningDismissed, setWarningDismissed] = useState(false);
+  const [suggestionDismissed, setSuggestionDismissed] = useState(false);
 
   if (loading) {
     return (
@@ -75,6 +77,17 @@ function App(): JSX.Element {
     }
   }
 
+  function handleDismissSuggestion() {
+    setSuggestionDismissed(true);
+    if (session) {
+      chrome.runtime.sendMessage({
+        type: 'DISMISS_SUGGESTION',
+        sessionId: session.sessionId,
+        tabId: session.tabId,
+      });
+    }
+  }
+
   return (
     <div className="popup-container">
       <Header
@@ -82,6 +95,13 @@ function App(): JSX.Element {
         modelName={session?.model}
         onToggleSettings={() => setShowSettings(!showSettings)}
       />
+
+      {session && session.lastSuggestion && !suggestionDismissed && (
+        <SuggestionChip
+          suggestion={session.lastSuggestion}
+          onDismiss={handleDismissSuggestion}
+        />
+      )}
 
       {session && session.warned6k && !warningDismissed && (
         <ContextWarning
