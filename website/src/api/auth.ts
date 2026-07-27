@@ -1,19 +1,24 @@
 // src/api/auth.ts
-// Auth API function stubs — real implementations in Phase 7.
+// Authentication API client methods.
 
-import { api } from './client';
-import type { AxiosResponse } from 'axios';
+import apiClient from './client';
+import type { AuthResponse, User } from '../types/api';
 
-export const authApi = {
-  requestOtp: (email: string): Promise<AxiosResponse> =>
-    api.post('/auth/request-otp', { email }),
+export async function requestOtp(email: string): Promise<{ message: string }> {
+  const res = await apiClient.post<{ message: string }>('/auth/request-otp', { email });
+  return res.data;
+}
 
-  verifyOtp: (email: string, otp: string): Promise<AxiosResponse> =>
-    api.post('/auth/verify-otp', { email, otp }),
+export async function verifyOtp(email: string, otp: string): Promise<AuthResponse> {
+  const res = await apiClient.post<AuthResponse>('/auth/verify-otp', { email, otp });
+  return res.data;
+}
 
-  logout: (): Promise<AxiosResponse> =>
-    api.post('/auth/logout'),
+export async function logout(): Promise<void> {
+  await apiClient.post('/auth/logout');
+}
 
-  me: (): Promise<AxiosResponse> =>
-    api.get('/auth/me'),
-};
+export async function getMe(): Promise<{ user: User }> {
+  const res = await apiClient.get<{ user: User }>('/auth/me');
+  return res.data;
+}

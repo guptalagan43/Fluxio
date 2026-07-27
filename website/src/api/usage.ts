@@ -1,22 +1,30 @@
 // src/api/usage.ts
-// Usage API function stubs — real implementations in Phase 7.
+// Usage and settings API client methods for dashboard.
 
-import { api } from './client';
-import type { AxiosResponse } from 'axios';
-import type { Settings } from '../types/domain';
+import apiClient from './client';
+import type { UsageData, UserSettings, SyncPayload, SyncResponse } from '../types/api';
 
-export type UsageRange = '7d' | '30d' | '90d';
+export async function getUsage(range = '7d'): Promise<UsageData> {
+  const res = await apiClient.get<UsageData>(`/api/usage?range=${range}`);
+  return res.data;
+}
 
-export const usageApi = {
-  getUsage: (range: UsageRange): Promise<AxiosResponse> =>
-    api.get(`/api/usage?range=${range}`),
+export async function getSettings(): Promise<UserSettings> {
+  const res = await apiClient.get<UserSettings>('/api/settings');
+  return res.data;
+}
 
-  getSettings: (): Promise<AxiosResponse> =>
-    api.get('/api/settings'),
+export async function updateSettings(settings: Partial<UserSettings>): Promise<UserSettings> {
+  const res = await apiClient.put<UserSettings>('/api/settings', settings);
+  return res.data;
+}
 
-  saveSettings: (data: Partial<Settings>): Promise<AxiosResponse> =>
-    api.put('/api/settings', data),
+export async function deleteData(): Promise<{ message: string }> {
+  const res = await apiClient.delete<{ message: string }>('/api/data');
+  return res.data;
+}
 
-  deleteData: (): Promise<AxiosResponse> =>
-    api.delete('/api/data'),
-};
+export async function syncEvents(payload: SyncPayload): Promise<SyncResponse> {
+  const res = await apiClient.post<SyncResponse>('/api/sync', payload);
+  return res.data;
+}

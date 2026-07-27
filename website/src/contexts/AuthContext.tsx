@@ -1,34 +1,53 @@
 // src/contexts/AuthContext.tsx
-// Auth context — stub for Phase 1 (always user = null).
-// Full implementation in Phase 7: GET /auth/me on mount to restore session.
+// AuthContext provider restoring session from HTTP cookie on mount.
 
-import { createContext, useContext, useState, type ReactNode } from 'react';
-import type { User } from '../types/domain';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import type { User } from '../types/api';
+import { getMe, logout as logoutApi } from '../api/auth';
 
-interface AuthContextValue {
+interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (user: User) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
+export function AuthProvider({ children }: { children: ReactNode }): JSX.Element {
   const [user, setUser] = useState<User | null>(null);
-  const [loading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const login = (newUser: User): void => {
-    setUser(newUser);
-  };
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const data = await getMe();
+        if (data && data.user) {
+          setUser(data.user);
+        }
+      } catch (err) {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-  const logout = (): void => {
-    setUser(null);
-  };
+    checkAuth();
+  }, []);
+
+  function login(userData: User) {
+    setUser(userData);
+  }
+
+  async function logout() {
+    try {
+      await logoutApi();
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      setUser(null);
+    }
+  }
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout }}>
@@ -37,7 +56,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   );
 }
 
-export function useAuth(): AuthContextValue {
+export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');

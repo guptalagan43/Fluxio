@@ -13,6 +13,7 @@ import rateLimit from 'express-rate-limit';
 
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
+import apiRouter from './routes/api.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { startOtpCleanupJob } from './jobs/otpCleanup.js';
@@ -71,6 +72,7 @@ app.use(globalLimiter);
 // ── Routes ──────────────────────────────────────────────────────────
 app.use(healthRouter);
 app.use(authRouter);
+app.use(apiRouter);
 
 // ── Error handling ──────────────────────────────────────────────────
 app.use(notFoundHandler);
