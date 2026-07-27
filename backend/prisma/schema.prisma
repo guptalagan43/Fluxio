@@ -1,0 +1,63 @@
+// This is the Prisma schema for the AI Token Tracker database.
+// Full schema per architecture.md Section 9 and prd.md Section 12.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String        @id @default(uuid())
+  email       String        @unique
+  createdAt   DateTime      @default(now())
+  usageEvents UsageEvent[]
+  settings    UserSettings?
+}
+
+model OtpRecord {
+  id        String   @id @default(uuid())
+  email     String
+  otpHash   String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+model UsageEvent {
+  id               String   @id @default(uuid())
+  userId           String
+  sessionId        String
+  platform         String
+  model            String?
+  role             String // 'user' | 'assistant'
+  estimatedTokens  Int
+  estimatedCostUsd Decimal  @db.Decimal(10, 6)
+  occurredAt       DateTime
+  syncedAt         DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sessionId, occurredAt])
+  @@index([userId, occurredAt])
+}
+
+model UserSettings {
+  userId           String   @id
+  weeklyLimitUsd   Decimal  @default(5.00) @db.Decimal(8, 2)
+  syncEnabled      Boolean  @default(false)
+  notify50         Boolean  @default(true)
+  notify80         Boolean  @default(true)
+  notify100        Boolean  @default(true)
+  preferredQuick   String   @default("gpt-4o-mini")
+  preferredCode    String   @default("claude-sonnet")
+  preferredLong    String   @default("gemini-1.5-pro")
+  preferredCreative String  @default("claude-sonnet")
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
