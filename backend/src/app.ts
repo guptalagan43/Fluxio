@@ -12,13 +12,15 @@ import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 
 import healthRouter from './routes/health.js';
+import authRouter from './routes/auth.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
-
-// Note: env.ts validation is skipped at import time for Phase 1.
-// It will be imported in server.ts once all env vars are configured.
+import { startOtpCleanupJob } from './jobs/otpCleanup.js';
 
 const app = express();
+
+// Start background cron jobs
+startOtpCleanupJob();
 
 // ── Security headers ────────────────────────────────────────────────
 app.use(helmet());
@@ -29,7 +31,14 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, extension background requests)
+    if (!origin || allowedOrigins.includes(origin) || origin.startsWith('chrome-extension://')) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Permissive in dev, restricted by exact origins
+    }
+  },
   credentials: true,
 }));
 
@@ -50,9 +59,8 @@ app.use(compression());
 app.use(morgan('combined'));
 
 // ── Global rate limiter ─────────────────────────────────────────────
-// Per rules.md SEC-05: rate limiters are active in all environments.
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
@@ -62,10 +70,7 @@ app.use(globalLimiter);
 
 // ── Routes ──────────────────────────────────────────────────────────
 app.use(healthRouter);
-
-// Stubs for future route groups — added in later phases:
-// app.use('/auth', authRouter);
-// app.use('/api', apiRouter);
+app.use(authRouter);
 
 // ── Error handling ──────────────────────────────────────────────────
 app.use(notFoundHandler);

@@ -7,7 +7,8 @@ interface SignInPromptProps {
 
 export function SignInPrompt({ onClose }: SignInPromptProps): JSX.Element {
   function handleSignIn() {
-    chrome.tabs.create({ url: 'https://yourwebsite.com/login?source=extension' });
+    const extId = chrome.runtime.id;
+    chrome.tabs.create({ url: `https://yourwebsite.com/login?source=extension&extId=${extId}` });
     onClose();
   }
 

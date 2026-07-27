@@ -16,7 +16,7 @@ import {
 import { handleNewMessage, getActiveSession, cleanupInactiveSessions, registerTabListeners } from './sessionManager';
 import { fetchAndCacheCostConfig } from './costConfigFetcher';
 import { checkThresholds } from './budgetManager';
-import { getSession, setSession } from '../utils/storage';
+import { getSession, setSession, getPrefs, setPrefs } from '../utils/storage';
 
 // Register tab removal listeners
 registerTabListeners();
@@ -48,8 +48,20 @@ chrome.runtime.onMessage.addListener(
       }
 
       case 'AUTH_SUCCESS': {
-        sendResponse({ received: true });
-        break;
+        const token = message.token;
+        if (token) {
+          chrome.storage.local.set({ jwt: token }).then(async () => {
+            const prefs = await getPrefs();
+            prefs.syncEnabled = true;
+            await setPrefs(prefs);
+
+            if (sender.tab?.id) {
+              chrome.tabs.remove(sender.tab.id);
+            }
+          });
+        }
+        sendResponse({ success: true });
+        return true;
       }
 
       case 'DISMISS_SUGGESTION': {
