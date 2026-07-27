@@ -1,0 +1,13 @@
+{
+  "lastUpdated": "2026-07-26",
+  "models": {
+    "gpt-4o":          { "inputPer1k": 0.005,   "outputPer1k": 0.015 },
+    "gpt-4o-mini":     { "inputPer1k": 0.00015, "outputPer1k": 0.0006 },
+    "claude-opus-4":   { "inputPer1k": 0.015,   "outputPer1k": 0.075 },
+    "claude-sonnet-4": { "inputPer1k": 0.003,   "outputPer1k": 0.015 },
+    "claude-haiku-4":  { "inputPer1k": 0.00025, "outputPer1k": 0.00125 },
+    "gemini-2-pro":    { "inputPer1k": 0.00125, "outputPer1k": 0.005 },
+    "gemini-2-flash":  { "inputPer1k": 0.000075,"outputPer1k": 0.0003 },
+    "default":         { "inputPer1k": 0.002,   "outputPer1k": 0.006 }
+  }
+}
