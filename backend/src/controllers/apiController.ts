@@ -4,6 +4,7 @@
 import type { Request, Response } from 'express';
 import { getUsageForUser } from '../services/usageService.js';
 import { getUserSettings, updateUserSettings, deleteUserData } from '../services/settingsService.js';
+import { batchUpsertEvents } from '../services/syncService.js';
 
 export async function getUsage(req: Request, res: Response): Promise<void> {
   if (!req.user) {
@@ -50,6 +51,21 @@ export async function updateSettings(req: Request, res: Response): Promise<void>
   } catch (err) {
     console.error('[API CONTROLLER] Error updating settings:', err);
     res.status(500).json({ error: 'Failed to update settings' });
+  }
+}
+
+export async function sync(req: Request, res: Response): Promise<void> {
+  if (!req.user) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+
+  try {
+    const result = await batchUpsertEvents(req.user.id, req.body);
+    res.status(200).json(result);
+  } catch (err) {
+    console.error('[API CONTROLLER] Error processing sync:', err);
+    res.status(500).json({ error: 'Failed to synchronize usage events' });
   }
 }
 

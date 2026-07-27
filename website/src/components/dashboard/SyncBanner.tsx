@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom';
 
 interface SyncBannerProps {
   syncEnabled?: boolean;
+  hasData?: boolean;
 }
 
-export function SyncBanner({ syncEnabled }: SyncBannerProps): JSX.Element | null {
-  if (syncEnabled !== false) return null;
+export function SyncBanner({ syncEnabled, hasData }: SyncBannerProps): JSX.Element | null {
+  // Hide banner if sync is enabled or if user already has synced data
+  if (syncEnabled !== false || hasData) return null;
 
   return (
     <div className="mb-6 p-4 bg-amber-50 border border-amber-300 flex items-center justify-between text-xs text-amber-900">

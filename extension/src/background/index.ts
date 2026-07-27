@@ -16,6 +16,7 @@ import {
 import { handleNewMessage, getActiveSession, cleanupInactiveSessions, registerTabListeners } from './sessionManager';
 import { fetchAndCacheCostConfig } from './costConfigFetcher';
 import { checkThresholds } from './budgetManager';
+import { checkAndSync } from './syncManager';
 import { getSession, setSession, getPrefs, setPrefs } from '../utils/storage';
 
 // Register tab removal listeners
@@ -112,7 +113,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
       break;
 
     case ALARM_SYNC:
-      // Implemented in Phase 8
+      checkAndSync();
       break;
 
     case ALARM_COST_CONFIG:

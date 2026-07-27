@@ -36,7 +36,10 @@ function DashboardContent(): JSX.Element {
         </div>
       </div>
 
-      <SyncBanner syncEnabled={settings?.syncEnabled} />
+      <SyncBanner
+        syncEnabled={settings?.syncEnabled}
+        hasData={(usageData?.recentSessions?.length ?? 0) > 0}
+      />
 
       <SummaryCards cards={usageData?.summaryCards} loading={loading} />
 

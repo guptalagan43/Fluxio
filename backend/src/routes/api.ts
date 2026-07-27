@@ -3,10 +3,10 @@
 
 import { Router } from 'express';
 import { authenticateJWT } from '../middleware/authenticateJWT.js';
-import { userApiLimiter, settingsLimiter, dataDeleteLimiter } from '../middleware/rateLimiters.js';
+import { userApiLimiter, settingsLimiter, syncLimiter, dataDeleteLimiter } from '../middleware/rateLimiters.js';
 import { validate } from '../middleware/validate.js';
-import { updateSettingsSchema } from '../schemas/api.schemas.js';
-import { getUsage, getSettings, updateSettings, deleteData } from '../controllers/apiController.js';
+import { updateSettingsSchema, syncSchema } from '../schemas/api.schemas.js';
+import { getUsage, getSettings, updateSettings, sync, deleteData } from '../controllers/apiController.js';
 
 const router = Router();
 
@@ -20,6 +20,14 @@ router.put(
   settingsLimiter,
   validate(updateSettingsSchema),
   updateSettings
+);
+
+router.post(
+  '/api/sync',
+  authenticateJWT,
+  syncLimiter,
+  validate(syncSchema),
+  sync
 );
 
 router.delete('/api/data', authenticateJWT, dataDeleteLimiter, deleteData);
